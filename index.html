@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ujian ASK Tingkatan 1</title>
+<style>
+  :root {
+    --navy: #1f3a8a; --navy-soft: #e8edfb; --ink: #1c2333; --muted: #5b6475;
+    --line: #d7dce6; --bg: #f3f5f9; --paper: #ffffff;
+    --ok: #15803d; --ok-bg: #e7f6ec; --bad: #b91c1c; --bad-bg: #fdecec;
+    --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+         color: var(--ink); background: var(--bg); line-height: 1.5; }
+  button { font: inherit; cursor: pointer; }
+
+  /* Top bar */
+  .topbar { position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 2px solid var(--navy);
+            display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+  .brand { font-weight: 700; color: var(--navy); margin-right: auto; }
+  .timer { font-variant-numeric: tabular-nums; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: var(--navy-soft); color: var(--navy); }
+  .timer.low { background: var(--bad-bg); color: var(--bad); }
+  .btn { border: 1px solid var(--navy); background: var(--navy); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+  .btn.ghost { background: #fff; color: var(--navy); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+  .sheet { position: sticky; top: 70px; align-self: start; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .sheet h3 { margin: 0 0 8px; font-size: 15px; color: var(--navy); }
+  .sheet .grp { font-size: 13px; color: var(--muted); margin: 10px 0 6px; }
+  .bubbles { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bubble { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff;
+            font-size: 13px; display: grid; place-items: center; color: var(--ink); }
+  .bubble.answered { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .bubble.right { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .bubble.half { background: #b45309; border-color: #b45309; color: #fff; }
+  .bubble.wrong { background: var(--bad); border-color: var(--bad); color: #fff; }
+
+  .paper { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 28px clamp(16px, 4vw, 48px); }
+  .cover { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 20px; }
+  .cover h1 { margin: 6px 0; color: var(--navy); font-size: 30px; }
+  .cover p { margin: 2px 0; color: var(--muted); }
+  .student { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; text-align: left; margin-top: 16px; }
+  .student div { border-bottom: 1px solid var(--ink); padding: 4px 0; font-size: 15px; }
+  .student span { color: var(--muted); font-size: 13px; display: block; }
+
+  .rules { background: var(--navy-soft); border-radius: 10px; padding: 12px 16px 12px 34px; margin: 0 0 10px; font-size: 15px; }
+  .rules li { margin: 3px 0; }
+
+  .part-head { display: flex; justify-content: space-between; align-items: baseline; margin: 30px 0 4px; border-bottom: 2px solid var(--navy); gap: 10px; }
+  .part-head h2 { margin: 0; color: var(--navy); font-size: 21px; }
+
+  .q { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 14px 0; scroll-margin-top: 80px; }
+  .q.right { border-color: var(--ok); background: var(--ok-bg); }
+  .q.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .qtop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .qnum { background: var(--navy); color: #fff; border-radius: 6px; padding: 0 9px; font-weight: 700; }
+  .tag { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
+  .stem { margin: 6px 0 12px; font-size: 16px; }
+  .chr { font-family: var(--mono); font-weight: 700; background: #fff3c4; padding: 0 8px; border-radius: 4px; }
+
+  /* Jadual jalan kerja (ikut contoh guru) */
+  .work-label { font-weight: 600; margin: 10px 0 4px; }
+  table.work { border-collapse: collapse; background: #fff; margin-bottom: 12px; }
+  table.work td { border: 1px solid var(--ink); padding: 6px 8px; text-align: center; }
+  table.work td.sym { width: 44px; font-size: 18px; }
+  table.work td.baki { width: 56px; }
+  table.work input { width: 64px; font: 17px var(--mono); text-align: center; padding: 4px; border: 1px solid transparent; border-radius: 4px; background: transparent; }
+  table.work input:focus { outline: none; border-color: var(--navy); background: var(--navy-soft); }
+  table.work input.bad { background: var(--bad-bg); color: var(--bad); }
+  table.work input.good { background: var(--ok-bg); }
+  table.work input.cell-bad { box-shadow: inset 0 0 0 2px var(--bad); }
+  .final { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .final label { font-weight: 600; }
+  .final input { font: 17px var(--mono); padding: 6px 10px; min-width: 0; width: min(320px, 100%); border: none; border-bottom: 2px solid var(--ink); background: transparent; }
+  .final input:focus { outline: none; border-bottom-color: var(--navy); background: var(--navy-soft); }
+  .char-head { font-weight: 700; color: var(--navy); margin: 12px 0 4px; }
+
+  .feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 6px; background: #fff; border-left: 4px solid var(--ok); }
+  .q.wrong .feedback { border-left-color: var(--bad); }
+  .feedback pre { font-family: var(--mono); font-size: 14px; background: #f7f8fb; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin: 6px 0; white-space: pre-wrap; }
+
+  .submit-row { text-align: center; margin: 30px 0 6px; }
+
+  /* Result banner */
+  .result { display: none; border: 2px solid var(--navy); border-radius: 12px; padding: 20px; margin-bottom: 22px; text-align: center; background: var(--navy-soft); }
+  .result.show { display: block; }
+  .result .score { font-size: 44px; font-weight: 800; color: var(--navy); }
+  .result .parts { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; color: var(--muted); }
+  .sync { margin-top: 10px; font-size: 14px; }
+
+  /* Start dialog */
+  .overlay { position: fixed; inset: 0; background: rgba(20, 28, 48, .55); display: grid; place-items: center; z-index: 50; padding: 16px; }
+  .overlay.hide { display: none; }
+  .dialog { background: #fff; border-radius: 14px; padding: 26px; width: min(440px, 100%); }
+  .dialog h2 { margin: 0 0 4px; color: var(--navy); }
+  .dialog p { color: var(--muted); margin: 0 0 16px; }
+  .dialog label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 4px; }
+  .dialog input, .dialog select { width: 100%; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .dialog .err { color: var(--bad); font-size: 14px; min-height: 20px; margin-top: 8px; }
+  .dialog .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .sheet { position: static; }
+    .student { grid-template-columns: 1fr; }
+    table.work td { padding: 4px 3px; }
+    table.work td.sym { width: 26px; }
+    table.work td.baki { width: 40px; font-size: 14px; }
+    table.work input { width: 50px; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Start dialog -->
+<div class="overlay" id="startOverlay">
+  <div class="dialog">
+    <h2>Mula ujian?</h2>
+    <p><span id="qCountText"></span> soalan · <span id="marksText"></span> markah · <span id="durationText"></span> minit. Masa mula dikira sebaik sahaja anda tekan Mula. Jawapan hanya ditunjukkan selepas anda hantar.</p>
+    <label for="stuName">Nama penuh</label>
+    <input id="stuName" autocomplete="name" placeholder="cth. Nur Aisyah binti Ahmad">
+    <label for="stuClass">Kelas</label>
+    <select id="stuClass"></select>
+    <div class="err" id="startErr"></div>
+    <div class="actions">
+      <button class="btn" id="startBtn">Mula ujian</button>
+    </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="brand">Asas Sains Komputer T1 · Kod ASCII kepada Nombor Perduaan</div>
+  <div class="timer" id="timer">--:--</div>
+  <button class="btn" id="submitTop" disabled>Hantar jawapan</button>
+</div>
+
+<div class="layout">
+  <aside class="sheet">
+    <h3>Kertas jawapan</h3>
+    <div id="sheetGroups"></div>
+  </aside>
+
+  <main class="paper" id="paper">
+    <div class="result" id="result">
+      <div>Markah anda</div>
+      <div class="score" id="scoreBig">0</div>
+      <div class="parts" id="scoreParts"></div>
+      <div class="sync" id="syncMsg"></div>
+    </div>
+
+    <div class="cover">
+      <p><strong>Asas Sains Komputer</strong></p>
+      <p>Ujian: Perwakilan Data</p>
+      <h1>Kod ASCII kepada Nombor Perduaan</h1>
+      <p>Tingkatan 1 · <span id="coverMarks"></span> markah</p>
+      <div class="student">
+        <div><span>Nama</span><b id="showName">&nbsp;</b></div>
+        <div><span>Kelas</span><b id="showClass">&nbsp;</b></div>
+        <div><span>Tarikh</span><b id="showDate">&nbsp;</b></div>
+        <div><span>Markah</span><b id="showMarks">&nbsp;</b></div>
+      </div>
+    </div>
+
+    <ol class="rules">
+      <li>Tukarkan kod ASCII (nombor perpuluhan) yang diberi kepada <b>nombor perduaan</b>.</li>
+      <li>Tunjukkan <b>jalan kerja</b> dengan kaedah <b>bahagi 2 berulang</b>: isi setiap kotak dengan nombor yang dibahagi, pembahagi, hasil bahagi dan baki, sehingga hasil bahagi menjadi 0.</li>
+      <li>Tulis <b>jawapan</b> nombor perduaan di ruang Jawapan. Jawapan 8 bit (cth. <code>01000001</code>) atau tanpa sifar di depan (cth. <code>1000001</code>) diterima.</li>
+      <li>Setiap soalan: <b>1 markah</b> jalan kerja (semua kotak betul) + <b>1 markah</b> jawapan.</li>
+    </ol>
+
+    <div id="questions"></div>
+
+    <div class="submit-row"><button class="btn" id="submitBottom" disabled>Hantar jawapan</button></div>
+  </main>
+</div>
+
+<script>
+/* ====================== TETAPAN (ubah di sini) ====================== */
+
+// Tampal URL Web App Google Apps Script di sini (lihat README.md).
+// Biarkan kosong untuk menguji halaman tanpa menghantar keputusan.
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbysgfQgJbcMjqJ_lC2rf1r1cLYMVbS82M90FGVIYsDLZG3Uj81fEWREH1pcr4QXd_ti0A/exec";
+
+const EXAM_ID = "T1-ASK-ASCII-1";    // dipaparkan dalam Google Sheet
+const DURATION_MIN = 120;             // masa keseluruhan (minit)
+const CLASSES = ["1 Amanah", "1 Berdikari", "1 Cekal", "1 Dedikasi", "1 Gemilang", "1 Harmoni", "1 Ikhlas", "1 Rasional"];
+
+/* ====================== SOALAN ====================== */
+
+// chars: aksara dan kod ASCII masing-masing. Bilangan baris jalan kerja dikira sendiri
+// daripada kod ASCII (satu baris bagi setiap pembahagian sehingga hasil bahagi 0).
+const SECTIONS = {
+  A: "Bahagian A: Huruf Besar",
+  B: "Bahagian B: Huruf Kecil dan Digit",
+  C: "Bahagian C: Perkataan"
+};
+
+const QUESTIONS = [
+  { sec: "A", topic: "Huruf besar", chars: [["A", 65]] },
+  { sec: "A", topic: "Huruf besar", chars: [["M", 77]] },
+  { sec: "B", topic: "Huruf kecil", chars: [["k", 107]] },
+  { sec: "B", topic: "Digit",       chars: [["5", 53]] },
+  { sec: "C", topic: "Perkataan",   chars: [["B", 66], ["I", 73], ["T", 84]] }
+];
+
+const MARKS_PER_Q = 2;   // 1 jalan kerja + 1 jawapan
+
+/* ====================== LOGIK UJIAN ====================== */
+
+const $ = id => document.getElementById(id);
+const TOTAL = QUESTIONS.length * MARKS_PER_Q;
+let student = null, startTime = null, timerId = null, submitted = false;
+
+const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// Langkah bahagi 2 berulang yang betul: [nombor, 2, hasil, baki]
+function steps(n) {
+  const out = [];
+  do { out.push([n, 2, Math.floor(n / 2), n % 2]); n = Math.floor(n / 2); } while (n > 0);
+  return out;
+}
+const binary = n => n.toString(2);
+const bin8 = n => n.toString(2).padStart(8, "0");
+
+// Senarai kelas dan teks
+$("stuClass").innerHTML = '<option value="">Pilih kelas anda</option>' +
+  CLASSES.map(c => `<option>${c}</option>`).join("");
+$("durationText").textContent = DURATION_MIN;
+$("qCountText").textContent = QUESTIONS.length;
+$("marksText").textContent = $("coverMarks").textContent = TOTAL;
+$("showMarks").innerHTML = `&nbsp;&nbsp;&nbsp;/ ${TOTAL}`;
+
+// Bina soalan
+const workTable = (n, c, rows) => `<table class="work"><tbody>` +
+  Array.from({ length: rows }, (_, r) => `<tr>` +
+    [0, 1, 2, 3].map(k => {
+      const inp = `<input inputmode="numeric" maxlength="3" autocomplete="off" data-q="${n}" id="w${n}_${c}_${r}_${k}" disabled>`;
+      return [`<td>${inp}</td><td class="sym">÷</td>`, `<td>${inp}</td><td class="sym">=</td>`,
+              `<td>${inp}</td><td class="baki">baki</td>`, `<td>${inp}</td>`][k];
+    }).join("") + `</tr>`).join("") + `</tbody></table>`;
+
+let html = "", lastSec = "";
+QUESTIONS.forEach((q, i) => {
+  const n = i + 1;
+  if (q.sec !== lastSec) {
+    const count = QUESTIONS.filter(x => x.sec === q.sec).length * MARKS_PER_Q;
+    html += `<div class="part-head"><h2>${SECTIONS[q.sec]}</h2><span>${count} markah</span></div>`;
+    lastSec = q.sec;
+  }
+  let stem, body = "";
+  if (q.chars.length === 1) {
+    const [ch, code] = q.chars[0];
+    stem = `Kod ASCII bagi aksara <span class="chr">${escapeHtml(ch)}</span> ialah <b>${code}</b>. Tukarkan kod ASCII ini kepada nombor perduaan. Tunjukkan jalan kerja.`;
+    body = `<div class="work-label">Jalan kerja:</div>` + workTable(n, 0, steps(code).length);
+  } else {
+    const word = q.chars.map(c => c[0]).join("");
+    stem = `Tukarkan perkataan <span class="chr">${escapeHtml(word)}</span> kepada nombor perduaan. Kod ASCII bagi setiap huruf: ` +
+      q.chars.map(([ch, code]) => `<b>${escapeHtml(ch)} = ${code}</b>`).join(", ") + `. Tunjukkan jalan kerja bagi setiap huruf.`;
+    body = `<div class="work-label">Jalan kerja:</div>` + q.chars.map(([ch, code], c) =>
+      `<div class="char-head">${escapeHtml(ch)} = ${code}</div>` + workTable(n, c, steps(code).length)).join("");
+  }
+  const ph = q.chars.length === 1 ? "cth. 01010101" : "cth. 01010101 01010101 01010101";
+  html += `<div class="q" id="q${n}">
+    <div class="qtop"><span class="qnum">${n}</span><span class="tag">${q.topic}</span><span class="tag">${MARKS_PER_Q} markah</span></div>
+    <div class="stem">${stem}</div>
+    ${body}
+    <div class="final"><label for="a${n}">Jawapan:</label>
+      <input id="a${n}" data-q="${n}" data-final="1" placeholder="${ph}" spellcheck="false" autocomplete="off" disabled></div>
+    <div class="feedback" hidden></div></div>`;
+});
+$("questions").innerHTML = html;
+
+// Kertas jawapan (bulatan)
+$("sheetGroups").innerHTML = Object.keys(SECTIONS).map(s =>
+  `<div class="grp">${SECTIONS[s].split(":")[0]}</div><div class="bubbles">` +
+  QUESTIONS.map((q, i) => q.sec === s ? `<button class="bubble" id="b${i + 1}" data-go="${i + 1}">${i + 1}</button>` : "").join("") +
+  `</div>`).join("");
+document.querySelectorAll(".bubble").forEach(b => b.onclick = () => {
+  const n = b.dataset.go;
+  $("q" + n).scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+document.addEventListener("input", e => {
+  const n = e.target.dataset.q;
+  if (!n || submitted) return;
+  const any = [...document.querySelectorAll(`input[data-q="${n}"]`)].some(x => x.value.trim() !== "");
+  $("b" + n).classList.toggle("answered", any);
+});
+
+// Tekan Enter untuk ke kotak seterusnya
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !e.target.dataset.q) return;
+  e.preventDefault();
+  const all = [...document.querySelectorAll("input[data-q]")];
+  const next = all[all.indexOf(e.target) + 1];
+  if (next) next.focus();
+});
+
+// Penandaan
+const digits = s => s.replace(/\s+/g, "");
+const normBin = s => s.replace(/[^01]/g, "").replace(/^0+(?=.)/, "");   // buang simbol, (…)₂ dan sifar depan
+
+function checkWork(n, q) {
+  let allOk = true; const record = [];
+  q.chars.forEach(([ch, code], c) => {
+    const parts = [];
+    steps(code).forEach((row, r) => {
+      const vals = row.map((v, k) => digits($(`w${n}_${c}_${r}_${k}`).value));
+      row.forEach((v, k) => {
+        const el = $(`w${n}_${c}_${r}_${k}`), ok = vals[k] === String(v);
+        el.classList.add(ok ? "good" : "cell-bad");
+        if (!ok) allOk = false;
+      });
+      parts.push(`${vals[0] || "_"}÷${vals[1] || "_"}=${vals[2] || "_"} b${vals[3] || "_"}`);
+    });
+    record.push((q.chars.length > 1 ? ch + ": " : "") + parts.join("; "));
+  });
+  return { ok: allOk, record: record.join(" || ") };
+}
+
+function checkFinal(typed, q) {
+  const want = q.chars.map(([, code]) => binary(code));
+  let groups = typed.trim().split(/[\s,;/|]+/).filter(Boolean);
+  if (q.chars.length > 1 && groups.length === 1) {
+    const d = typed.replace(/[^01]/g, "");
+    if (d.length === 8 * q.chars.length) groups = d.match(/.{8}/g);   // ditulis bersambung tanpa ruang
+  }
+  if (groups.length !== want.length) return false;
+  return groups.every((g, i) => normBin(g) === want[i]);
+}
+
+// Mula
+$("startBtn").onclick = () => {
+  const name = $("stuName").value.trim(), cls = $("stuClass").value;
+  if (name.length < 3) return $("startErr").textContent = "Sila taip nama penuh anda.";
+  if (!cls) return $("startErr").textContent = "Sila pilih kelas anda.";
+  student = { name, cls };
+  startTime = Date.now();
+  $("startOverlay").classList.add("hide");
+  $("showName").textContent = name;
+  $("showClass").textContent = cls;
+  $("showDate").textContent = new Date().toLocaleDateString("en-GB");
+  document.querySelectorAll("input[data-q]").forEach(t => t.disabled = false);
+  $("submitTop").disabled = $("submitBottom").disabled = false;
+  tick(); timerId = setInterval(tick, 1000);
+  window.onbeforeunload = () => submitted ? undefined : "Jawapan anda akan hilang.";
+};
+
+function tick() {
+  const left = Math.max(0, DURATION_MIN * 60 - Math.floor((Date.now() - startTime) / 1000));
+  const m = String(Math.floor(left / 60)).padStart(2, "0"), s = String(left % 60).padStart(2, "0");
+  $("timer").textContent = `Masa tinggal ${m}:${s}`;
+  $("timer").classList.toggle("low", left <= 300);
+  if (left === 0) { alert("Masa tamat! Jawapan anda akan dihantar sekarang."); submit(true); }
+}
+
+// Hantar
+$("submitTop").onclick = $("submitBottom").onclick = () => submit(false);
+
+function submit(timeUp) {
+  if (submitted) return;
+  if (!timeUp) {
+    const blank = QUESTIONS.map((_, i) => i + 1).filter(n => $("a" + n).value.trim() === "");
+    const msg = blank.length
+      ? `Anda belum menulis jawapan bagi ${blank.length} soalan: ${blank.join(", ")}.\nHantar juga?`
+      : "Hantar jawapan sekarang? Anda tidak boleh mengubahnya selepas ini.";
+    if (!confirm(msg)) return;
+  }
+  submitted = true;
+  clearInterval(timerId);
+  window.onbeforeunload = null;
+  document.querySelectorAll("input[data-q]").forEach(t => t.disabled = true);
+  $("submitTop").disabled = $("submitBottom").disabled = true;
+
+  let workTotal = 0, ansTotal = 0;
+  const bySec = {}, answers = [], working = [], marks = [];
+  QUESTIONS.forEach((q, i) => {
+    const n = i + 1, typed = $("a" + n).value;
+    const w = checkWork(n, q), a = checkFinal(typed, q);
+    const got = (w.ok ? 1 : 0) + (a ? 1 : 0);
+    workTotal += w.ok ? 1 : 0; ansTotal += a ? 1 : 0;
+    bySec[q.sec] = (bySec[q.sec] || 0) + got;
+    answers.push(`${n}: ${typed.trim() || "-"}`);
+    working.push(`${n}) ${w.record}`);
+    marks.push(`${n}:${got}/${MARKS_PER_Q}`);
+
+    const cls = got === MARKS_PER_Q ? "right" : got === 0 ? "wrong" : "half";
+    $("q" + n).classList.add(got === MARKS_PER_Q ? "right" : "wrong");
+    $("b" + n).className = "bubble " + cls;
+    const correct = q.chars.map(([ch, code]) =>
+      (q.chars.length > 1 ? `${ch} = ${code}\n` : "") +
+      steps(code).map(([d, , h, b]) => `${String(d).padStart(3)} ÷ 2 = ${String(h).padStart(3)}  baki ${b}`).join("\n") +
+      `\nBaca baki dari bawah ke atas: ${bin8(code)}`).join("\n\n");
+    const fb = document.querySelector(`#q${n} .feedback`);
+    fb.hidden = false;
+    fb.innerHTML = `<b>${got} / ${MARKS_PER_Q} markah.</b>
+      Jalan kerja: ${w.ok ? "✔ betul" : "✘ ada kotak yang salah (bertanda merah)"} ·
+      Jawapan: ${a ? "✔ betul" : (typed.trim() ? "✘ salah" : "✘ tidak dijawab")}
+      <div>Jalan kerja yang betul:</div><pre>${escapeHtml(correct)}</pre>
+      Jawapan: <b>${q.chars.map(([, code]) => bin8(code)).join(" ")}</b>`;
+  });
+
+  const total = workTotal + ansTotal;
+  const secs = Math.round((Date.now() - startTime) / 1000);
+  const used = `${Math.floor(secs / 60)} min ${secs % 60} s`;
+  $("scoreBig").textContent = `${total} / ${TOTAL}`;
+  $("scoreParts").innerHTML =
+    `<span>Jalan kerja: ${workTotal} / ${QUESTIONS.length}</span><span>Jawapan: ${ansTotal} / ${QUESTIONS.length}</span>` +
+    `<span>Masa digunakan: ${used}</span>`;
+  $("showMarks").textContent = `${total} / ${TOTAL}`;
+  $("result").classList.add("show");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  sendToSheet({
+    exam: EXAM_ID, name: student.name, cls: student.cls,
+    work: workTotal, ans: ansTotal,
+    total, outOf: TOTAL, percent: Math.round(total / TOTAL * 100),
+    timeUsed: used, timeUp: timeUp ? "ya" : "tidak",
+    marks: marks.join(" "), answers: answers.join(" | "), working: working.join("\n")
+  });
+}
+
+// Hantar keputusan ke Google Sheets (simpan salinan dan cuba semula jika tiada internet)
+function sendToSheet(data) {
+  if (!SHEET_URL) { $("syncMsg").textContent = "(Mod ujian: Google Sheet belum disambungkan.)"; return; }
+  $("syncMsg").textContent = "Menghantar keputusan anda kepada guru…";
+  fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(data) })
+    .then(() => {
+      $("syncMsg").textContent = "✔ Keputusan anda telah dihantar kepada guru.";
+      try { localStorage.removeItem("pendingResultASCII"); } catch (e) {}
+    })
+    .catch(() => {
+      try { localStorage.setItem("pendingResultASCII", JSON.stringify(data)); } catch (e) {}
+      $("syncMsg").innerHTML = "⚠ Keputusan tidak dapat dihantar (tiada internet?). " +
+        "<button class='btn ghost' id='retry'>Cuba lagi</button>";
+      $("retry").onclick = () => sendToSheet(data);
+    });
+}
+
+// Jika keputusan sebelum ini gagal dihantar, cuba semula apabila halaman dibuka
+try {
+  const pending = localStorage.getItem("pendingResultASCII");
+  if (pending && SHEET_URL) fetch(SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: pending })
+    .then(() => localStorage.removeItem("pendingResultASCII")).catch(() => {});
+} catch (e) {}
+</script>
+</body>
+</html>
