@@ -168,7 +168,7 @@
     <ol class="rules">
       <li>Tukarkan kod ASCII (nombor perpuluhan) yang diberi kepada <b>nombor perduaan</b>.</li>
       <li>Tunjukkan <b>jalan kerja</b> dengan kaedah <b>bahagi 2 berulang</b>: isi setiap kotak dengan nombor yang dibahagi, pembahagi, hasil bahagi dan baki, sehingga hasil bahagi menjadi 0.</li>
-      <li>Tulis <b>jawapan</b> nombor perduaan di ruang Jawapan. Jawapan 8 bit (cth. <code>01000001</code>) atau tanpa sifar di depan (cth. <code>1000001</code>) diterima.</li>
+      <li>Tulis <b>jawapan</b> nombor perduaan di ruang Jawapan. Jawapan dengan 0 di hadapan (cth. <code>01000001</code>) atau tanpa 0 di hadapan (cth. <code>1000001</code>) kedua-duanya dikira betul.</li>
       <li>Setiap soalan: <b>1 markah</b> jalan kerja (semua kotak betul) + <b>1 markah</b> jawapan.</li>
     </ol>
 
@@ -188,7 +188,6 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbysgfQgJbcMjqJ_lC2rf1
 const EXAM_ID = "T1-ASK-ASCII-1";    // dipaparkan dalam Google Sheet
 const DURATION_MIN = 120;             // masa keseluruhan (minit)
 const CLASSES = ["1 Amanah", "1 Berdikari", "1 Cekal", "1 Dedikasi", "1 Gemilang", "1 Harmoni", "1 Ikhlas", "1 Rasional"];
-
 /* ====================== SOALAN ====================== */
 
 // chars: aksara dan kod ASCII masing-masing. Bilangan baris jalan kerja dikira sendiri
@@ -326,8 +325,10 @@ function checkFinal(typed, q) {
   const want = q.chars.map(([, code]) => binary(code));
   let groups = typed.trim().split(/[\s,;/|]+/).filter(Boolean);
   if (q.chars.length > 1 && groups.length === 1) {
+    // ditulis bersambung tanpa ruang: cuba 8 bit setiap huruf, kemudian tanpa sifar depan
     const d = typed.replace(/[^01]/g, "");
-    if (d.length === 8 * q.chars.length) groups = d.match(/.{8}/g);   // ditulis bersambung tanpa ruang
+    if (d.length === 8 * q.chars.length) groups = d.match(/.{8}/g);
+    else if (d === want.join("")) groups = want;
   }
   if (groups.length !== want.length) return false;
   return groups.every((g, i) => normBin(g) === want[i]);
@@ -401,7 +402,8 @@ function submit(timeUp) {
       Jalan kerja: ${w.ok ? "✔ betul" : "✘ ada kotak yang salah (bertanda merah)"} ·
       Jawapan: ${a ? "✔ betul" : (typed.trim() ? "✘ salah" : "✘ tidak dijawab")}
       <div>Jalan kerja yang betul:</div><pre>${escapeHtml(correct)}</pre>
-      Jawapan: <b>${q.chars.map(([, code]) => bin8(code)).join(" ")}</b>`;
+      Jawapan: <b>${q.chars.map(([, code]) => bin8(code)).join(" ")}</b> atau
+      <b>${q.chars.map(([, code]) => binary(code)).join(" ")}</b> (tanpa 0 di hadapan)`;
   });
 
   const total = workTotal + ansTotal;
